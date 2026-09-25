@@ -1,0 +1,13 @@
+# secrets / config
+server/.env
+firmware/powertrap/secrets.h
+
+# node
+node_modules/
+npm-debug.log*
+
+# runtime
+server/state.json
+
+# os
+.DS_Store

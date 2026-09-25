@@ -1,0 +1,21 @@
+{
+  "name": "powertrap-server",
+  "version": "1.0.0",
+  "description": "Heartbeat watchdog for a PowerTrap ESP32 — alerts you when the device goes dark.",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2"
+  },
+  "optionalDependencies": {
+    "nodemailer": "^6.9.16",
+    "twilio": "^5.4.0"
+  }
+}

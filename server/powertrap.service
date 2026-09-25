@@ -1,0 +1,27 @@
+# PowerTrap heartbeat monitor — systemd unit
+#
+# Install:
+#   sudo cp powertrap.service /etc/systemd/system/powertrap.service
+#   # edit WorkingDirectory / ExecStart / User below to match your box
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now powertrap
+#   journalctl -u powertrap -f      # watch the logs
+
+[Unit]
+Description=PowerTrap heartbeat monitor
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/powertrap/server
+ExecStart=/usr/bin/node index.js
+Restart=always
+RestartSec=3
+# .env is loaded by the app (dotenv) from WorkingDirectory.
+# Run as a non-root user that can read the app dir:
+User=powertrap
+Group=powertrap
+
+[Install]
+WantedBy=multi-user.target
