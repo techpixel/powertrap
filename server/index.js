@@ -2,6 +2,7 @@
 //  PowerTrap server — receives heartbeats and alerts when they stop.
 // =============================================================================
 import 'dotenv/config';
+import { timingSafeEqual } from 'node:crypto';
 import express from 'express';
 import { sendDownAlert, sendRecovery, sendTest, enabledChannels } from './notify.js';
 
@@ -15,6 +16,8 @@ const cfg = {
   renotifyMs: Number(process.env.RENOTIFY_SECONDS || 300) * 1000,  // re-alert cadence while down
   maxRenotify: Number(process.env.MAX_RENOTIFY || 6),             // cap on repeated alerts
   publicUrl: process.env.PUBLIC_URL || '',                        // used for notification click links
+  basicAuthUser: process.env.BASIC_AUTH_USER || '',              // guards the /status page (browser login)
+  basicAuthPass: process.env.BASIC_AUTH_PASS || '',
 };
 
 if (!cfg.token) {
@@ -44,6 +47,30 @@ function authed(req) {
   const h = req.get('authorization') || '';
   const token = h.startsWith('Bearer ') ? h.slice(7) : req.query.token;
   return token === cfg.token;
+}
+
+// Constant-time string compare that won't throw on length mismatch.
+function safeEqual(a, b) {
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  return bufA.length === bufB.length && timingSafeEqual(bufA, bufB);
+}
+
+// HTTP Basic Auth for the browser-facing /status page. No-op unless both
+// BASIC_AUTH_USER and BASIC_AUTH_PASS are set, so existing deploys stay open.
+function basicAuth(req, res, next) {
+  if (!cfg.basicAuthUser || !cfg.basicAuthPass) return next();
+
+  const h = req.get('authorization') || '';
+  if (h.startsWith('Basic ')) {
+    const [user, pass] = Buffer.from(h.slice(6), 'base64').toString().split(':');
+    if (user != null && pass != null && safeEqual(user, cfg.basicAuthUser) && safeEqual(pass, cfg.basicAuthPass)) {
+      return next();
+    }
+  }
+
+  res.set('WWW-Authenticate', `Basic realm="PowerTrap ${cfg.device}", charset="UTF-8"`);
+  return res.status(401).send('Authentication required.');
 }
 
 // The ESP posts here on a fixed interval.
@@ -77,8 +104,8 @@ app.post('/test-alert', (req, res) => {
 
 app.get('/healthz', (_req, res) => res.json({ ok: true }));
 
-// Human-friendly status page (auto-refreshes).
-app.get('/status', (_req, res) => {
+// Human-friendly status page (auto-refreshes). Guarded by HTTP Basic Auth.
+app.get('/status', basicAuth, (_req, res) => {
   const silence = Date.now() - state.lastSeen;
   const up = !state.down;
   const meta = state.lastMeta || {};
