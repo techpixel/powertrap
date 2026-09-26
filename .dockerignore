@@ -1,7 +1,0 @@
-# keep the image small and never leak secrets
-**/node_modules
-**/.env
-**/*.log
-firmware/
-.git/
-README.md

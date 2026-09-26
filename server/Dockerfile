@@ -1,7 +1,7 @@
 # =============================================================================
 #  SIBO heartbeat server — container image
-#  Build context = repo root (this file builds the ./server app).
-#  In Coolify: choose Build Pack "Dockerfile" — default paths work as-is.
+#  Build context = ./server (this directory).
+#  In Coolify: Build Pack "Dockerfile", Base Directory "/server" — paths work as-is.
 # =============================================================================
 FROM node:22-alpine
 
@@ -15,11 +15,11 @@ WORKDIR /app
 # Install deps first for better layer caching.
 # --omit=dev drops devDependencies but KEEPS optionalDependencies
 # (twilio + nodemailer), so the email/call channels stay available.
-COPY server/package.json server/package-lock.json ./
+COPY package.json package-lock.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 
 # App source.
-COPY server/ ./
+COPY . ./
 
 ENV PORT=8080
 EXPOSE 8080
