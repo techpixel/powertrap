@@ -104,6 +104,9 @@ app.post('/test-alert', (req, res) => {
 
 app.get('/healthz', (_req, res) => res.json({ ok: true }));
 
+// Root just points at the human-facing status page.
+app.get('/', (_req, res) => res.redirect('/status'));
+
 // Human-friendly status page (auto-refreshes). Guarded by HTTP Basic Auth.
 app.get('/status', basicAuth, (_req, res) => {
   const silence = Date.now() - state.lastSeen;
